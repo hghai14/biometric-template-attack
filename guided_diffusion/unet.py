@@ -658,13 +658,13 @@ size as the time step embedding and can be added to it.
         :return: an [N x C x ...] Tensor of outputs.
         """
         assert (y is not None) == (
-            self.num_classes is not None
+            self.embedding_size is not None
         ), "must specify y if and only if the model is class-conditional"
 
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
-        if self.num_classes is not None:
+        if self.embedding_size is not None:
             assert y.shape == (x.shape[0],)
             emb = emb + self.image_emb(y)
 
