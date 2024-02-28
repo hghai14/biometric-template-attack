@@ -1,0 +1,3 @@
+datasets/*
+guided_diffusion/__pycache__/*
+guided_diffusion.egg-info

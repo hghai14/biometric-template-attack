@@ -163,6 +163,9 @@ def create_model(
     for res in attention_resolutions.split(","):
         attention_ds.append(image_size // int(res))
 
+    # NOTE: num_classes denotes embedding size for identity_cond
+    NUM_CLASSES = 512
+
     return UNetModel(
         image_size=image_size,
         in_channels=3,
