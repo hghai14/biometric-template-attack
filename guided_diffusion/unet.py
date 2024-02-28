@@ -665,6 +665,7 @@ size as the time step embedding and can be added to it.
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
         if self.embedding_size is not None:
+            print(y.shape, (x.shape[0],)) 
             assert y.shape == (x.shape[0],)
             emb = emb + self.image_emb(y)
 
