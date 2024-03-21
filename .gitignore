@@ -1,2 +1,6 @@
 embeddings/FFHQ
 embeddings/torchtest.pt
+embeddings/preprocessed_data
+embeddings/embeddings
+embeddings/preprocessed_embeddings
+embeddings/embeddings.zip
