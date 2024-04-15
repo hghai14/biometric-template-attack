@@ -259,9 +259,24 @@ class GaussianDiffusion:
         assert t.shape == (B,)
         model_output = model(x, self._scale_timesteps(t), **model_kwargs)
 
+
+        # NOTE: change in inference function
+        # set y as zero temporarily
+        org_y = model_kwargs.get("y", None)
+        model_kwargs["y"] = th.zeros_like(org_y)
+
+        model_output_y0 = model(x, self._scale_timesteps(t), **model_kwargs)
+
+        # restore y
+        model_kwargs["y"] = org_y
+
+        model_output = model_output_y0 + 3*(model_output - model_output_y0)
+
+
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:
             assert model_output.shape == (B, C * 2, *x.shape[2:])
             model_output, model_var_values = th.split(model_output, C, dim=1)
+            # model_output_y0, model_var_values_y0 = th.split(model_output_y0, C, dim=1)
             if self.model_var_type == ModelVarType.LEARNED:
                 model_log_variance = model_var_values
                 model_variance = th.exp(model_log_variance)
@@ -301,17 +316,29 @@ class GaussianDiffusion:
             pred_xstart = process_xstart(
                 self._predict_xstart_from_xprev(x_t=x, t=t, xprev=model_output)
             )
+            # pred_xstart_y0 = process_xstart(
+            #     self._predict_xstart_from_xprev(x_t=x, t=t, xprev=model_output_y0)
+            # )
             model_mean = model_output
+            # model_mean = model_output*2 - model_output_y0
         elif self.model_mean_type in [ModelMeanType.START_X, ModelMeanType.EPSILON]:
             if self.model_mean_type == ModelMeanType.START_X:
                 pred_xstart = process_xstart(model_output)
+                # pred_xstart_y0 = process_xstart(model_output_y0)
             else:
                 pred_xstart = process_xstart(
                     self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output)
                 )
+                # pred_xstart_y0 = process_xstart(
+                #     self._predict_xstart_from_eps(x_t=x, t=t, eps=model_output_y0)
+                # )
             model_mean, _, _ = self.q_posterior_mean_variance(
                 x_start=pred_xstart, x_t=x, t=t
             )
+            # model_mean_y0, _, _ = self.q_posterior_mean_variance(
+            #     x_start=pred_xstart_y0, x_t=x, t=t
+            # )
+            # model_mean = 2*model_mean - model_mean_y0
         else:
             raise NotImplementedError(self.model_mean_type)
 
@@ -786,6 +813,7 @@ class GaussianDiffusion:
                 # Learn the variance using the variational bound, but don't let
                 # it affect our mean prediction.
                 frozen_out = th.cat([model_output.detach(), model_var_values], dim=1)
+
                 terms["vb"] = self._vb_terms_bpd(
                     model=lambda *args, r=frozen_out: r,
                     x_start=x_start,

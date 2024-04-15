@@ -20,7 +20,10 @@ def main():
     args = create_argparser().parse_args()
 
     dist_util.setup_dist()
-    logger.configure()
+    if args.checkpoint_dir:
+        logger.configure("/home/himanshi_ghai/Downloads/mtp-2-id-ddpm/saved_checkpoints/ffhq_highres/")
+    else:
+        logger.configure()
 
     logger.log("creating model and diffusion...")
     model, diffusion = create_model_and_diffusion(
@@ -54,6 +57,7 @@ def main():
         schedule_sampler=schedule_sampler,
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
+        classifier_free=args.classifier_free
     ).run_loop()
 
 
@@ -72,6 +76,8 @@ def create_argparser():
         resume_checkpoint="",
         use_fp16=False,
         fp16_scale_growth=1e-3,
+        checkpoint_dir=None,
+        classifier_free=False,
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

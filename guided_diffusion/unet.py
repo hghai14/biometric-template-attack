@@ -451,6 +451,8 @@ class UNetModel(nn.Module):
         if num_heads_upsample == -1:
             num_heads_upsample = num_heads
 
+        # NOTE: num_classes parameter contains the embedding size of each image
+
         self.image_size = image_size
         self.in_channels = in_channels
         self.model_channels = model_channels
@@ -460,7 +462,7 @@ class UNetModel(nn.Module):
         self.dropout = dropout
         self.channel_mult = channel_mult
         self.conv_resample = conv_resample
-        self.num_classes = num_classes
+        self.embedding_size = num_classes
         self.use_checkpoint = use_checkpoint
         self.dtype = th.float16 if use_fp16 else th.float32
         self.num_heads = num_heads
@@ -473,9 +475,24 @@ class UNetModel(nn.Module):
             nn.SiLU(),
             linear(time_embed_dim, time_embed_dim),
         )
+        
+        """
+        NOTE: 
+        To condition the diffusion model
+on the identity, we add an identity embedding to the resid-
+ual connections of the ResNet blocks, as commonly done
+for class embeddings [16] and the CLIP [56] embedding
+in text-to-image generation methods [57, 62]. The identity
+embedding is obtained by projecting the ID vector through
+a learnable fully connected layer such that it has the same
+size as the time step embedding and can be added to it.
+        """
 
-        if self.num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_embed_dim)
+        if self.embedding_size is not None:
+            # fully connected layer to project the ID vector to the same size as the time step embedding
+            self.image_emb = nn.Sequential(
+                linear(self.embedding_size, time_embed_dim)
+            )
 
         ch = input_ch = int(channel_mult[0] * model_channels)
         self.input_blocks = nn.ModuleList(
@@ -641,15 +658,17 @@ class UNetModel(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         assert (y is not None) == (
-            self.num_classes is not None
+            self.embedding_size is not None
         ), "must specify y if and only if the model is class-conditional"
 
         hs = []
         emb = self.time_embed(timestep_embedding(timesteps, self.model_channels))
 
-        if self.num_classes is not None:
-            assert y.shape == (x.shape[0],)
-            emb = emb + self.label_emb(y)
+        if self.embedding_size is not None:
+            # NOTE: changes this conditon
+            # assert y.shape == (x.shape[0],)
+            assert y.shape[0] == x.shape[0]
+            emb = emb + self.image_emb(y)
 
         h = x.type(self.dtype)
         for module in self.input_blocks:

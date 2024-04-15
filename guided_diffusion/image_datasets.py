@@ -8,6 +8,11 @@ import numpy as np
 from torch.utils.data import DataLoader, Dataset
 
 
+"""
+    TODO: class_cond -> identity_cond
+"""
+
+
 def load_data(
     *,
     data_dir,
@@ -38,7 +43,9 @@ def load_data(
     """
     if not data_dir:
         raise ValueError("unspecified data directory")
-    all_files = _list_image_files_recursively(data_dir)
+    all_files = _list_image_files_recursively(data_dir + "/images")
+    
+    # NOTE: classes not needed since doing identity conditioning
     classes = None
     if class_cond:
         # Assume classes are the first part of the filename,
@@ -46,10 +53,13 @@ def load_data(
         class_names = [bf.basename(path).split("_")[0] for path in all_files]
         sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
         classes = [sorted_classes[x] for x in class_names]
+
+    all_emb = _list_embedding_files_recursively(data_dir + "/embeddings")
+
     dataset = ImageDataset(
         image_size,
         all_files,
-        classes=classes,
+        embedding_paths=all_emb,
         shard=MPI.COMM_WORLD.Get_rank(),
         num_shards=MPI.COMM_WORLD.Get_size(),
         random_crop=random_crop,
@@ -78,13 +88,24 @@ def _list_image_files_recursively(data_dir):
             results.extend(_list_image_files_recursively(full_path))
     return results
 
+def _list_embedding_files_recursively(data_dir):
+    results = []
+    for entry in sorted(bf.listdir(data_dir)):
+        full_path = bf.join(data_dir, entry)
+        ext = entry.split(".")[-1]
+        if "." in entry and ext.lower() in ["npy"]:
+            results.append(full_path)
+        elif bf.isdir(full_path):
+            results.extend(_list_embedding_files_recursively(full_path))
+    return results
+
 
 class ImageDataset(Dataset):
     def __init__(
         self,
         resolution,
         image_paths,
-        classes=None,
+        embedding_paths=None,
         shard=0,
         num_shards=1,
         random_crop=False,
@@ -93,7 +114,7 @@ class ImageDataset(Dataset):
         super().__init__()
         self.resolution = resolution
         self.local_images = image_paths[shard:][::num_shards]
-        self.local_classes = None if classes is None else classes[shard:][::num_shards]
+        self.local_embeddings = None if embedding_paths is None else embedding_paths[shard:][::num_shards]
         self.random_crop = random_crop
         self.random_flip = random_flip
 
@@ -118,8 +139,17 @@ class ImageDataset(Dataset):
         arr = arr.astype(np.float32) / 127.5 - 1
 
         out_dict = {}
-        if self.local_classes is not None:
-            out_dict["y"] = np.array(self.local_classes[idx], dtype=np.int64)
+        if self.local_embeddings is not None:
+            with open(self.local_embeddings[idx], "rb") as f:
+                # each file is .npy file
+                emb = np.load(f)
+                # binary_data = f.read()
+                # emb = np.frombuffer(binary_data, dtype=np.float32)
+                # if emb is None:
+                #     print("Error in generating emb")
+                # reshape emb
+                emb = np.squeeze(emb)
+            out_dict["y"] = emb
         return np.transpose(arr, [2, 0, 1]), out_dict
 
 
