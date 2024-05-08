@@ -4,3 +4,8 @@ embeddings/preprocessed_data
 embeddings/embeddings
 embeddings/preprocessed_embeddings
 embeddings/embeddings.zip
+embeddings/*
+ffhq256_pp/*
+warped_dataset/*
+warped_dataset.zip
+samples_*
