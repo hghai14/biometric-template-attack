@@ -6,6 +6,8 @@ embeddings/preprocessed_embeddings
 embeddings/embeddings.zip
 embeddings/*
 ffhq256_pp/*
+ffhq256_emb/*
 warped_dataset/*
 warped_dataset.zip
 samples_*
+ffhq256/*
