@@ -11,3 +11,7 @@ warped_dataset/*
 warped_dataset.zip
 samples_*
 ffhq256/*
+*FEI*
+*.zip
+datasets/*
+ffhq_warped/*
