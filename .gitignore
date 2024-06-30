@@ -1,14 +1,8 @@
 datasets/*
 guided_diffusion/__pycache__/*
-ffhq_pp_res
 guided_diffusion.egg-info
 ffhq256/*
 20180402-114759-vggface2.pt
-fei_vggface
-ffhq256_arcface_res
-ffhq256
-evaluation.ipynb
-temp.ipynb
-vggface.py
-embeddings/torchtest.pt
+warped_dataset/*
 embeddings/rcmalli_vggface_tf_vgg16.h5
+embeddings/torchtest.pt
