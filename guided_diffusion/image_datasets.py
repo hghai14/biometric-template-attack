@@ -149,6 +149,8 @@ class ImageDataset(Dataset):
                 #     print("Error in generating emb")
                 # reshape emb
                 emb = np.squeeze(emb)
+                # change type to float
+                emb = emb.astype(np.float32)
             out_dict["y"] = emb
         return np.transpose(arr, [2, 0, 1]), out_dict
 

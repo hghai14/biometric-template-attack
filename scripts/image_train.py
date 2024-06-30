@@ -21,7 +21,7 @@ def main():
 
     dist_util.setup_dist()
     if args.checkpoint_dir:
-        logger.configure("/home/himanshi_ghai/Downloads/mtp-2-id-ddpm/saved_checkpoints/ffhq_highres/")
+        logger.configure(args.checkpoint_dir)
     else:
         logger.configure()
 
@@ -57,7 +57,7 @@ def main():
         schedule_sampler=schedule_sampler,
         weight_decay=args.weight_decay,
         lr_anneal_steps=args.lr_anneal_steps,
-        classifier_free=args.classifier_free
+        classifier_free=args.classifier_free,
     ).run_loop()
 
 

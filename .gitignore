@@ -4,3 +4,11 @@ ffhq_pp_res
 guided_diffusion.egg-info
 ffhq256/*
 20180402-114759-vggface2.pt
+fei_vggface
+ffhq256_arcface_res
+ffhq256
+evaluation.ipynb
+temp.ipynb
+vggface.py
+embeddings/torchtest.pt
+embeddings/rcmalli_vggface_tf_vgg16.h5

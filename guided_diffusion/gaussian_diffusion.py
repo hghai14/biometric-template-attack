@@ -123,11 +123,13 @@ class GaussianDiffusion:
         model_var_type,
         loss_type,
         rescale_timesteps=False,
+        identity_scale=None
     ):
         self.model_mean_type = model_mean_type
         self.model_var_type = model_var_type
         self.loss_type = loss_type
         self.rescale_timesteps = rescale_timesteps
+        self.identity_scale = identity_scale
 
         # Use float64 for accuracy.
         betas = np.array(betas, dtype=np.float64)
@@ -262,15 +264,16 @@ class GaussianDiffusion:
 
         # NOTE: change in inference function
         # set y as zero temporarily
-        org_y = model_kwargs.get("y", None)
-        model_kwargs["y"] = th.zeros_like(org_y)
+        if self.identity_scale:
+            org_y = model_kwargs.get("y", None)
+            model_kwargs["y"] = th.zeros_like(org_y)
 
-        model_output_y0 = model(x, self._scale_timesteps(t), **model_kwargs)
+            model_output_y0 = model(x, self._scale_timesteps(t), **model_kwargs)
 
-        # restore y
-        model_kwargs["y"] = org_y
+            # restore y
+            model_kwargs["y"] = org_y
 
-        model_output = model_output_y0 + 3*(model_output - model_output_y0)
+            model_output = model_output_y0 + self.identity_scale*(model_output - model_output_y0)
 
 
         if self.model_var_type in [ModelVarType.LEARNED, ModelVarType.LEARNED_RANGE]:

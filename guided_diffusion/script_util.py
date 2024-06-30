@@ -5,7 +5,7 @@ from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
 from .unet import SuperResModel, UNetModel, EncoderUNetModel
 
-NUM_CLASSES = 1000
+NUM_CLASSES = 512
 
 
 def diffusion_defaults():
@@ -21,6 +21,7 @@ def diffusion_defaults():
         predict_xstart=False,
         rescale_timesteps=False,
         rescale_learned_sigmas=False,
+        identity_scale=None
     )
 
 
@@ -60,6 +61,7 @@ def model_and_diffusion_defaults():
         resblock_updown=False,
         use_fp16=False,
         use_new_attention_order=False,
+        embedding_size=512
     )
     res.update(diffusion_defaults())
     return res
@@ -95,6 +97,8 @@ def create_model_and_diffusion(
     resblock_updown,
     use_fp16,
     use_new_attention_order,
+    embedding_size,
+    identity_scale
 ):
     model = create_model(
         image_size,
@@ -113,6 +117,7 @@ def create_model_and_diffusion(
         resblock_updown=resblock_updown,
         use_fp16=use_fp16,
         use_new_attention_order=use_new_attention_order,
+        embedding_size=embedding_size,
     )
     diffusion = create_gaussian_diffusion(
         steps=diffusion_steps,
@@ -123,6 +128,8 @@ def create_model_and_diffusion(
         rescale_timesteps=rescale_timesteps,
         rescale_learned_sigmas=rescale_learned_sigmas,
         timestep_respacing=timestep_respacing,
+        identity_scale=identity_scale
+
     )
     return model, diffusion
 
@@ -144,6 +151,7 @@ def create_model(
     resblock_updown=False,
     use_fp16=False,
     use_new_attention_order=False,
+    embedding_size=512
 ):
     if channel_mult == "":
         if image_size == 512:
@@ -162,6 +170,9 @@ def create_model(
     attention_ds = []
     for res in attention_resolutions.split(","):
         attention_ds.append(image_size // int(res))
+
+    # NOTE: num_classes denotes embedding size for identity_cond
+    NUM_CLASSES = embedding_size
 
     return UNetModel(
         image_size=image_size,
@@ -394,6 +405,7 @@ def create_gaussian_diffusion(
     rescale_timesteps=False,
     rescale_learned_sigmas=False,
     timestep_respacing="",
+    identity_scale=None
 ):
     betas = gd.get_named_beta_schedule(noise_schedule, steps)
     if use_kl:
@@ -421,6 +433,7 @@ def create_gaussian_diffusion(
         ),
         loss_type=loss_type,
         rescale_timesteps=rescale_timesteps,
+        identity_scale=identity_scale
     )
 
 
