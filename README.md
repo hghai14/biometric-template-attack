@@ -23,7 +23,7 @@ We will split up our hyperparameters into three groups: model architecture, diff
 ```
 MODEL_FLAGS="--image_size 64 --num_channels 192 --num_heads 3 --num_res_blocks 3 --attention_resolutions 32,16,8  --dropout 0.1 --class_cond True --learn_sigma True --resblock_updown True --use_fp16 True --use_new_attention_order True --embedding_size 512"
 DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule cosine --use_scale_shift_norm True"
-TRAIN_FLAGS="--lr 1e-4 --batch_size 32"
+TRAIN_FLAGS="--lr 1e-4 --batch_size 32 --ema_rate 0.9999"
 python scripts/image_train.py --data_dir path/to/images_and_embeddings $MODEL_FLAGS $DIFFUSION_FLAGS $TRAIN_FLAGS
 ```
 
