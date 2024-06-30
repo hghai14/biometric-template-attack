@@ -1,4 +1,4 @@
-# guided-diffusion
+# Biometric Template Attack
 
 This repository is forked from [openai/guided-diffusion](https://github.com/openai/guided-diffusion), with modifications for identity conditioning
 
